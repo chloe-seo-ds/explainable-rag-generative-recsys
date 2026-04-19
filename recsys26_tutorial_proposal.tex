@@ -1,0 +1,235 @@
+\documentclass[sigconf,nonacm]{acmart}
+
+%%% Remove ACM-specific elements for proposal submission
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+
+\begin{document}
+
+\title{From Retrieval to Generation: Comparing Explainable, Retrieval-Augmented, and LLM-Native Text Recommender Systems}
+\subtitle{Tutorial Proposal for RecSys 2026}
+
+\author{Yejin Seo}
+\email{yseo@legalzoom.com}
+\affiliation{%
+  \institution{LegalZoom; Harvard University}
+}
+
+\author{Sarthak Baral}
+\email{sab7803@g.harvard.edu}
+\affiliation{%
+  \institution{Harvard University}
+}
+
+\author{Kaylee Vo}
+\email{kvo@seas.harvard.edu}
+\affiliation{%
+  \institution{Harvard University}
+}
+
+\begin{abstract}
+Recent progress in transformer encoders, retrieval-augmented generation, and large language models has created multiple viable ways to build text-rich recommender systems.
+Yet the field still lacks a practitioner-oriented tutorial that compares these choices under a common framework.
+This tutorial presents a structured, empirical, and implementation-aware comparison of three paradigms for text-driven recommendation:
+collaborative-evidence explainable recommenders, retrieval-augmented recommenders with LLM prompting or reranking, and LLM-native generative recommenders.
+
+Rather than treating these paradigms in isolation, the tutorial shows how they differ in recommendation quality, explanation quality, operational complexity, latency, and cost.
+We discuss how to construct comparable pipelines, how to evaluate ranking performance with standard top-$K$ metrics, and how to evaluate explanations for relevance, specificity, and hallucination risk.
+We also present a practical ``when to use what'' framework that helps attendees map method choice to product constraints such as sparse interactions, cold start, explainability requirements, and serving budgets.
+
+The tutorial is aimed at researchers and practitioners who want a grounded path from modern language models to deployable recommendation systems.
+Attendees will leave with conceptual clarity, implementation guidance, and a reusable evaluation template for future work.
+\end{abstract}
+
+\maketitle
+
+\section{Tutorial Length}
+Half-day tutorial delivered over two conference tutorial blocks, for approximately 3 hours of instructional time plus the conference coffee break.
+
+\section{Motivation}
+Language models are rapidly changing the design space of recommender systems, especially in domains where item descriptions, reviews, metadata, and other textual signals are abundant.
+However, the practical choice among model families remains unclear.
+Teams can now build:
+\begin{enumerate}
+    \item recommenders that stay tightly grounded in collaborative evidence and generate interpretable explanations from historical behavior,
+    \item retrieval-augmented systems that combine semantic retrieval with LLM reasoning or reranking, or
+    \item fully generative recommenders that use instruction-following and language generation as the main recommendation interface.
+\end{enumerate}
+
+These options differ not only in offline ranking performance, but also in explanation quality, controllability, serving cost, and deployment complexity.
+Existing overviews often focus on a single paradigm at a time.
+This tutorial instead offers a controlled comparative perspective, designed to help the RecSys community reason about trade-offs rather than chase a single fashionable architecture.
+
+The tutorial is timely for RecSys because it connects several active subareas that the community is already engaging with---explainability, retrieval, multimodal/text-rich recommendation, and LLM-based recommendation---while keeping the emphasis on practical method choice and reproducible evaluation.
+
+\section{Instructors}
+\textbf{Yejin Seo} is a Principal Data Scientist at LegalZoom and a student at Harvard University.
+\textbf{Sarthak Baral} is a student at Harvard University.
+\textbf{Kaylee Vo} is a Graduate Researcher and student at Harvard University.
+
+\section{Detailed Outline}
+
+\subsection{Block A (90 minutes)}
+
+\subsubsection{Framing the Problem Space}
+\begin{itemize}
+    \item Why text-rich recommendation matters now
+    \item Where collaborative filtering stops being enough
+    \item Why explanation quality matters in product settings
+    \item The three paradigms covered in this tutorial
+    \item What ``controlled comparison'' means in practice
+\end{itemize}
+
+\subsubsection{Representations and Retrieval Foundations}
+\begin{itemize}
+    \item Item and user text representations
+    \item Transformer encoders for semantic retrieval
+    \item Pretrained embeddings versus task-adapted embeddings
+    \item Candidate generation, reranking, and grounding pathways
+    \item Failure modes in sparse and noisy text settings
+\end{itemize}
+
+\subsubsection{Paradigm 1: Explainable Recommenders Grounded in Collaborative Evidence}
+\begin{itemize}
+    \item Architecture and data flow
+    \item How collaborative signals and textual signals are combined
+    \item Explanation construction from historical user--item evidence
+    \item Template-based versus neural explanation generation
+    \item \textit{Advantages:} stronger grounding, easier justification, tighter connection to user history
+    \item \textit{Limitations:} weaker cold-start behavior, dependence on interaction density, narrower generalization outside known catalogs
+    \item Example evaluation setup and failure analysis
+\end{itemize}
+
+\subsubsection{Paradigm 2: Retrieval-Augmented Recommenders}
+\begin{itemize}
+    \item Dense retrieval for initial candidate generation
+    \item Prompt assembly and context injection
+    \item LLM reranking versus LLM explanation generation
+    \item Retrieval quality versus generation quality trade-offs
+    \item Controlling hallucinations through grounding
+    \item Serving considerations: batching, caching, latency budgets, cost-aware inference
+    \item Design decisions that most affect production viability
+\end{itemize}
+
+\subsection{Block B (90 minutes)}
+
+\subsubsection{Paradigm 3: LLM-Native Generative Recommenders}
+\begin{itemize}
+    \item End-to-end recommendation through generation
+    \item Prompt-based user modeling
+    \item Few-shot and zero-shot recommendation patterns
+    \item \textit{Strengths:} flexibility, low engineering overhead at prototype time, strong natural-language interaction
+    \item \textit{Limitations:} output instability, grounding problems, ranking/generation mismatch, high serving cost
+\end{itemize}
+
+\subsubsection{Unified Experimental Framework}
+\begin{itemize}
+    \item Shared candidate pools and fair comparisons
+    \item Recommended benchmark structure using text-rich recommendation data
+    \item Ranking metrics: HR@10, NDCG@10, Recall@$K$
+    \item Explanation metrics: \emph{relevance} (does the explanation cite items or attributes the user actually interacted with?), \emph{specificity} (does it go beyond generic praise to reference concrete item features?), \emph{consistency} (does the same input produce semantically stable explanations across runs?), and \emph{hallucination rate} (does the explanation assert facts not supported by the input data?)
+    \item System metrics: latency, token cost, implementation complexity, reproducibility burden
+    \item How to interpret contradictory metric outcomes
+\end{itemize}
+
+\subsubsection{Hands-On Walkthrough}
+\begin{itemize}
+    \item Minimal embedding-based retrieval pipeline
+    \item Minimal retrieval-augmented recommendation pipeline
+    \item Example explanation evaluation
+    \item Notebook structure for reproducibility
+    \item How to extend the starter code after the tutorial
+\end{itemize}
+
+\subsubsection{Decision Framework and Open Challenges}
+\begin{itemize}
+    \item Which approach to use under: sparse interactions, cold-start items, explanation-heavy product requirements, strict serving budgets, fast prototyping constraints
+    \item Bias, safety, and evaluation gaps
+    \item Research opportunities in grounded explanation and benchmark design
+    \item Closing Q\&A
+\end{itemize}
+
+\section{Target Audience and Prerequisites}
+This tutorial is designed for an intermediate to advanced audience.
+It will be most useful for recommender-systems researchers, PhD and advanced Master's students, ML engineers and applied scientists working with ranking, retrieval, or LLM systems, and practitioners interested in explainability and text-rich recommendation settings.
+
+\paragraph{Expected background.}
+Familiarity with standard recommender-system concepts; comfort with basic ranking metrics; basic machine-learning knowledge.
+Some exposure to transformers or embeddings is helpful but not required.
+
+\section{Materials and Logistics}
+
+\paragraph{Materials for attendees.}
+Slide deck in PDF form; starter notebooks for the main pipelines; code templates for evaluation; reading list; reproducibility guide; post-tutorial repository containing notebooks and sample prompts.
+
+\paragraph{Attendee needs.}
+A laptop is recommended for the optional hands-on component.
+No specialized hardware is required for following the tutorial.
+
+\paragraph{Instructor needs.}
+Standard audio-video setup and internet access.
+
+\section{Teaching Experience}
+\textbf{Yejin Seo:} Internal ML training curriculum design and delivery at LegalZoom; hands-on model education for cross-functional and data-science audiences.
+
+\textbf{Sarthak Baral:} Taught undergraduate-level courses in Software Development Lifecycle at King's College London.
+
+\textbf{Kaylee Vo:} Teaching Fellow for Harvard College, Applied Mathematics~115 (Mathematical Modeling), an upper-level undergraduate course.
+Developed lecture notes\footnote{\url{https://drive.google.com/file/d/1NofKRNLueNZELv7cz7GXYgYVtnXb4cC5/view}} and code materials.\footnote{\url{https://github.com/zhimingkuang/Harvard-AM-115/blob/main/11_diffusion/solve_diffusion_with_pinn_bfgs.ipynb}}
+Also taught introductory economics at Stanford Pre-Collegiate Summer Institutes.
+
+\section{Relevant Publications}
+The instructors are actively conducting graduate research at Harvard University on text-rich recommendation, explainable recommendation, and LLM-based ranking systems, with multiple manuscripts currently under review at peer-reviewed venues.
+Seo additionally brings applied experience designing and deploying recommendation and ranking systems in production at LegalZoom.
+The tutorial content is grounded in a comparative implementation study that the team is developing as part of this research program; the codebase and evaluation framework will be released alongside the tutorial materials.
+
+\section{Differences from Prior Tutorials}
+
+Compared with \textit{Agentic LLM for Recommender Systems} (RecSys~2025), this tutorial is not centered on agentic behavior or modular agent design; its core contribution is a comparative framework for choosing among grounded explainable recommenders, retrieval-augmented recommenders, and generative recommenders.
+
+Compared with \textit{Multi Agentic Recommender Systems} (RecSys~2025), our focus is on controlled evaluation, explanation quality, and deployment trade-offs across model families rather than multi-agent orchestration patterns.
+
+Compared with \textit{Standard Practices for Data Processing and Multimodal Feature Extraction in Recommendation with DataRec and Ducho} (RecSys~2025), this tutorial concentrates on model-family selection and end-to-end decision-making in text-rich recommendation, not preprocessing pipelines or multimodal feature engineering.
+
+Compared with \textit{Recent Advances in Generative Conversational Recommender Systems} (RecSys~2025), this tutorial is broader than conversation and explicitly includes non-generative, evidence-grounded baselines in the comparison.
+
+Compared with \textit{A Tutorial on Feature Interpretation in Recommender Systems} (RecSys~2024), this tutorial focuses on choosing among three modern architecture families and evaluating both recommendation outputs and generated explanations, rather than feature interpretation within existing pipelines.
+
+\bibliographystyle{ACM-Reference-Format}
+
+\begin{thebibliography}{7}
+
+\bibitem{harper2015movielens}
+F.~Maxwell Harper and Joseph~A. Konstan. 2015.
+\newblock The MovieLens Datasets: History and Context.
+\newblock {\em ACM Transactions on Interactive Intelligent Systems\/} 5, 4, Article~19 (2015), 19~pages.
+
+\bibitem{reimers2019sentence}
+Nils Reimers and Iryna Gurevych. 2019.
+\newblock Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks.
+\newblock In {\em Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
+
+\bibitem{lewis2020rag}
+Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich K\"{u}ttler, Mike Lewis, Wen-tau Yih, Tim Rockt\"{a}schel, Sebastian Riedel, and Douwe Kiela. 2020.
+\newblock Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.
+\newblock In {\em Advances in Neural Information Processing Systems\/} 33.
+
+\bibitem{zhang2020explainable}
+Yongfeng Zhang and Xu~Chen. 2020.
+\newblock Explainable Recommendation: A Survey and New Perspectives.
+\newblock {\em Foundations and Trends in Information Retrieval\/} 14, 1 (2020), 1--101.
+
+\bibitem{zhang2020bertscore}
+Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian~Q. Weinberger, and Yoav Artzi. 2020.
+\newblock BERTScore: Evaluating Text Generation with BERT.
+\newblock In {\em Proceedings of the Eighth International Conference on Learning Representations (ICLR)}.
+
+\bibitem{shehmir2025llm4rec}
+Syed~Ali Shehmir and Rasha Kashef. 2025.
+\newblock LLM4Rec: A Comprehensive Survey on the Integration of Large Language Models in Recommender Systems---Approaches, Applications and Challenges.
+\newblock {\em Information Fusion\/} 117 (2025), 102842.
+
+\end{thebibliography}
+
+\end{document}
