@@ -58,7 +58,7 @@ Teams can now build:
     \item fully generative recommenders that use instruction-following and language generation as the main recommendation interface.
 \end{enumerate}
 
-These options differ not only in offline ranking performance, but also in explanation quality, controllability, serving cost, and deployment complexity.
+These options differ not only in offline ranking performance but also in explanation quality, controllability, serving cost, and deployment complexity.
 Existing overviews often focus on a single paradigm at a time.
 This tutorial instead offers a controlled comparative perspective, designed to help the RecSys community reason about trade-offs rather than chase a single fashionable architecture.
 
@@ -77,7 +77,7 @@ The tutorial is timely for RecSys because it connects several active subareas th
 
 \subsubsection{Framing the Problem Space}
 \begin{itemize}
-    \item Why text-rich recommendation matters now
+    \item Why text-rich recommendation matters 
     \item Where collaborative filtering stops being enough
     \item Why explanation quality matters in product settings
     \item The three paradigms covered in this tutorial: (1)~explainable recommenders grounded in collaborative evidence, (2)~retrieval-augmented recommenders, and (3)~LLM-native generative recommenders
@@ -123,7 +123,7 @@ Anchor system: K-RagRec~\cite{wang2025kragrec} --- knowledge-graph retrieval-aug
 \subsubsection{Paradigm 3: LLM-Native Generative Recommenders}
 Anchor system: GenRec~\cite{ji2024genrec} --- instruction-tuned LLM for direct next-item generation.
 \begin{itemize}
-    \item End-to-end recommendation through generation: the user's interaction history is formatted as an instruction-tuning prompt and the LLM directly generates the recommended item title
+    \item End-to-end recommendation through generation: the user's interaction history is formatted as an instruction-tuning prompt, and the LLM directly generates the recommended item title
     \item Instruction diversity during training: how paraphrased instruction templates improve robustness
     \item Prompt-based user modeling; few-shot and zero-shot recommendation patterns
     \item QLoRA fine-tuning for domain adaptation versus zero-shot API-based generation
@@ -131,7 +131,7 @@ Anchor system: GenRec~\cite{ji2024genrec} --- instruction-tuned LLM for direct n
     \item \textit{Limitations:} output instability, grounding problems, ranking/generation mismatch, high serving cost; generated titles require fuzzy matching against the item catalog for evaluation
 \end{itemize}
 
-\subsubsection{Unified Experimental Framework}
+\subsubsection{Experimental Framework}
 \begin{itemize}
     \item Shared candidate pools and fair comparisons across all three paradigms
     \item Benchmark dataset: Amazon Books~\cite{amazon2023reviews} (text-rich, with reviews and metadata), chosen because it is natively supported by all three anchor systems
@@ -163,7 +163,7 @@ Training-heavy steps (BPR-MF, QLoRA fine-tuning) are precomputed and provided as
 
 \section{Target Audience and Prerequisites}
 This tutorial is designed for an intermediate to advanced audience.
-It will be most useful for recommender-systems researchers, PhD and advanced Master's students, ML engineers and applied scientists working with ranking, retrieval, or LLM systems, and practitioners interested in explainability and text-rich recommendation settings.
+It will be most useful for recommender-systems researchers, PhD and advanced Master's students, ML engineers, and applied scientists working with ranking, retrieval, or LLM systems, and practitioners interested in explainability and text-rich recommendation settings.
 
 \paragraph{Expected background.}
 Familiarity with standard recommender-system concepts; comfort with basic ranking metrics; basic machine-learning knowledge.
@@ -203,7 +203,7 @@ Also taught introductory economics at Stanford Pre-Collegiate Summer Institutes.
 
 \section{Relevant Publications}
 The instructors are actively conducting graduate research in machine learning at Harvard University, with multiple manuscripts currently under review at peer-reviewed venues.
-The tutorial content draws directly on this research experience as well as Seo's applied work designing and deploying recommendation and ranking systems in production at LegalZoom.
+The tutorial content draws directly on this research experience and on Seo's applied work designing and deploying recommendation and ranking systems in production at LegalZoom.
 The team is developing a comparative implementation study as part of this tutorial; the codebase and evaluation framework will be released alongside the tutorial materials.
 
 \section{Differences from Prior Tutorials}
