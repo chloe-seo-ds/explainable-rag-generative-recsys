@@ -217,13 +217,12 @@ Compared with \textit{Recent Advances in Generative Conversational Recommender S
 
 Compared with \textit{A Tutorial on Feature Interpretation in Recommender Systems} (RecSys~2024), this tutorial focuses on choosing among three modern architecture families and evaluating both recommendation outputs and generated explanations, rather than feature interpretation within existing pipelines.
 
-\vspace{0.5em}
-\noindent
-\begin{footnotesize}
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lcccc}
+\begin{table}[h]
+\caption{Feature comparison with recent related tutorials.}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcccc@{}}
 \hline
-& \rotatebox{60}{\textbf{Multi-par.}} & \rotatebox{60}{\textbf{Shared eval.}} & \rotatebox{60}{\textbf{Expl.\ qual.}} & \rotatebox{60}{\textbf{Decision}} \\
+\textbf{Tutorial} & \textbf{Multi-} & \textbf{Shared} & \textbf{Expl.} & \textbf{Decision} \\
+& \textbf{paradigm} & \textbf{eval.} & \textbf{quality} & \textbf{guide} \\
 \hline
 LLMs for Rec '23 & \texttimes & \texttimes & \texttimes & \texttimes \\
 Agentic LLM '25 & \texttimes & \texttimes & \texttimes & partial \\
@@ -231,8 +230,8 @@ Gen.\ Conv.\ '25 & \texttimes & \texttimes & partial & \texttimes \\
 Feature Interp.\ '24 & \texttimes & \texttimes & partial & \texttimes \\
 \textbf{Ours} & \checkmark & \checkmark & \checkmark & \checkmark \\
 \hline
-\end{tabular}
-\end{footnotesize}
+\end{tabular*}
+\end{table}
 
 \newpage
 \bibliographystyle{ACM-Reference-Format}
