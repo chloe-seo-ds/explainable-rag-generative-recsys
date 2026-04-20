@@ -38,6 +38,7 @@ Rather than treating these paradigms in isolation, the tutorial shows how they d
 We discuss how to construct comparable pipelines, how to evaluate ranking performance with standard top-$K$ metrics, and how to evaluate explanations for relevance, specificity, and hallucination risk.
 We also present a practical ``when to use what'' framework that helps attendees map method choice to product constraints such as sparse interactions, cold start, explainability requirements, and serving budgets.
 
+All three paradigms are benchmarked on a shared Amazon Books dataset with common evaluation code.
 The tutorial is aimed at researchers and practitioners who want a grounded path from modern language models to deployable recommendation systems.
 Attendees will leave with conceptual clarity, implementation guidance, and a reusable evaluation template for future work.
 \end{abstract}
@@ -91,23 +92,25 @@ The tutorial is timely for RecSys because it connects several active subareas th
 \end{itemize}
 
 \subsubsection{Paradigm 1: Explainable Recommenders Grounded in Collaborative Evidence}
+Anchor system: XRec~\cite{ma2024xrec} --- collaborative ranking with LLM-generated explanations.
 \begin{itemize}
-    \item Architecture and data flow
+    \item Architecture and data flow: collaborative filtering (BPR-MF) produces a ranked list; a downstream LLM generates natural-language explanations conditioned on the user's history and item metadata
     \item How collaborative signals and textual signals are combined
     \item Explanation construction from historical user--item evidence
     \item Template-based versus neural explanation generation
     \item \textit{Advantages:} stronger grounding, easier justification, tighter connection to user history
-    \item \textit{Limitations:} weaker cold-start behavior, dependence on interaction density, narrower generalization outside known catalogs
-    \item Example evaluation setup and failure analysis
+    \item \textit{Limitations:} weaker cold-start behavior, dependence on interaction density, narrower generalization outside known catalogs; the LLM explanation layer adds latency but does not modify the ranking
+    \item Example evaluation on Amazon Books~\cite{amazon2023reviews} and failure analysis
 \end{itemize}
 
 \subsubsection{Paradigm 2: Retrieval-Augmented Recommenders}
+Anchor system: K-RagRec~\cite{wang2025kragrec} --- knowledge-graph retrieval-augmented generation for LLM-based recommendation.
 \begin{itemize}
-    \item Dense retrieval for initial candidate generation
-    \item Prompt assembly and context injection
+    \item Dense retrieval for initial candidate generation (sentence-transformer embeddings, FAISS indexing)
+    \item Prompt assembly and context injection: retrieved candidates are formatted as LLM input
     \item LLM reranking versus LLM explanation generation
     \item Retrieval quality versus generation quality trade-offs
-    \item Controlling hallucinations through grounding
+    \item Controlling hallucinations through grounding in retrieved evidence
     \item Serving considerations: batching, caching, latency budgets, cost-aware inference
     \item Design decisions that most affect production viability
 \end{itemize}
@@ -115,30 +118,34 @@ The tutorial is timely for RecSys because it connects several active subareas th
 \subsection{Block B (90 minutes)}
 
 \subsubsection{Paradigm 3: LLM-Native Generative Recommenders}
+Anchor system: GenRec~\cite{ji2024genrec} --- instruction-tuned LLM for direct next-item generation.
 \begin{itemize}
-    \item End-to-end recommendation through generation
-    \item Prompt-based user modeling
-    \item Few-shot and zero-shot recommendation patterns
+    \item End-to-end recommendation through generation: the user's interaction history is formatted as an instruction-tuning prompt and the LLM directly generates the recommended item title
+    \item Instruction diversity during training: how paraphrased instruction templates improve robustness
+    \item Prompt-based user modeling; few-shot and zero-shot recommendation patterns
+    \item QLoRA fine-tuning for domain adaptation versus zero-shot API-based generation
     \item \textit{Strengths:} flexibility, low engineering overhead at prototype time, strong natural-language interaction
-    \item \textit{Limitations:} output instability, grounding problems, ranking/generation mismatch, high serving cost
+    \item \textit{Limitations:} output instability, grounding problems, ranking/generation mismatch, high serving cost; generated titles require fuzzy matching against the item catalog for evaluation
 \end{itemize}
 
 \subsubsection{Unified Experimental Framework}
 \begin{itemize}
-    \item Shared candidate pools and fair comparisons
-    \item Recommended benchmark structure using text-rich recommendation data
-    \item Ranking metrics: HR@10, NDCG@10, Recall@$K$
-    \item Explanation metrics: \emph{relevance} (does the explanation cite items or attributes the user actually interacted with?), \emph{specificity} (does it go beyond generic praise to reference concrete item features?), \emph{consistency} (does the same input produce semantically stable explanations across runs?), and \emph{hallucination rate} (does the explanation assert facts not supported by the input data?)
+    \item Shared candidate pools and fair comparisons across all three paradigms
+    \item Benchmark dataset: Amazon Books~\cite{amazon2023reviews} (text-rich, with reviews and metadata), chosen because it is natively supported by all three anchor systems
+    \item Ranking metrics: HR@10, NDCG@10, Recall@$K$ (note: in Paradigm~1 these apply only to the collaborative ranking layer; the downstream LLM explanation layer does not produce rankings and is evaluated separately with explanation metrics)
+    \item Explanation metrics, informed by the evaluation dimensions surveyed in~\cite{zhang2020explainable} and operationalized with embedding-based text evaluation~\cite{zhang2020bertscore}: \emph{relevance} (does the explanation cite items or attributes the user actually interacted with?), \emph{specificity} (does it go beyond generic praise to reference concrete item features?), \emph{consistency} (does the same input produce semantically stable explanations across runs?), and \emph{hallucination rate} (does the explanation assert facts not supported by the input data?). No unified benchmark standard yet exists for explanation evaluation in recommendation; the tutorial will discuss this gap and propose practical operationalizations for each metric
     \item System metrics: latency, token cost, implementation complexity, reproducibility burden
     \item How to interpret contradictory metric outcomes
 \end{itemize}
 
 \subsubsection{Hands-On Walkthrough}
+All code is provided as Jupyter notebooks on Amazon Books, with shared data preparation and evaluation utilities.
 \begin{itemize}
-    \item Minimal embedding-based retrieval pipeline
-    \item Minimal retrieval-augmented recommendation pipeline
-    \item Example explanation evaluation
-    \item Notebook structure for reproducibility
+    \item Paradigm~1 notebook: BPR-MF training, ranking, and LLM explanation generation (XRec-inspired)
+    \item Paradigm~2 notebook: sentence-transformer retrieval, FAISS indexing, and LLM reranking (K-RagRec-inspired)
+    \item Paradigm~3 notebook: instruction-tuning data preparation, QLoRA fine-tuning, and title-matching evaluation (GenRec-inspired)
+    \item Unified evaluation notebook: comparison tables for ranking, explanation quality, and system metrics across all three paradigms
+    \item Each notebook supports both local LLM inference (4-bit quantized LLaMA) and API-based alternatives
     \item How to extend the starter code after the tutorial
 \end{itemize}
 
@@ -171,18 +178,19 @@ No specialized hardware is required for following the tutorial.
 Standard audio-video setup and internet access.
 
 \section{Teaching Experience}
-\textbf{Yejin Seo:} Internal ML training curriculum design and delivery at LegalZoom; hands-on model education for cross-functional and data-science audiences.
+\textbf{Yejin Seo:} Designed and currently delivers an organization-wide machine learning training program at LegalZoom.
+Previously led cross-organizational training on causal inference and experimentation as Head of Experimentation.
 
 \textbf{Sarthak Baral:} Taught undergraduate-level courses in Software Development Lifecycle at King's College London.
 
 \textbf{Kaylee Vo:} Teaching Fellow for Harvard College, Applied Mathematics~115 (Mathematical Modeling), an upper-level undergraduate course.
-Developed lecture notes\footnote{\url{https://drive.google.com/file/d/1NofKRNLueNZELv7cz7GXYgYVtnXb4cC5/view}} and code materials.\footnote{\url{https://github.com/zhimingkuang/Harvard-AM-115/blob/main/11_diffusion/solve_diffusion_with_pinn_bfgs.ipynb}}
+Developed lecture notes and code materials.\footnote{\url{https://github.com/zhimingkuang/Harvard-AM-115/blob/main/11_diffusion/solve_diffusion_with_pinn_bfgs.ipynb}}
 Also taught introductory economics at Stanford Pre-Collegiate Summer Institutes.
 
 \section{Relevant Publications}
-The instructors are actively conducting graduate research at Harvard University on text-rich recommendation, explainable recommendation, and LLM-based ranking systems, with multiple manuscripts currently under review at peer-reviewed venues.
-Seo additionally brings applied experience designing and deploying recommendation and ranking systems in production at LegalZoom.
-The tutorial content is grounded in a comparative implementation study that the team is developing as part of this research program; the codebase and evaluation framework will be released alongside the tutorial materials.
+The instructors are actively conducting graduate research in machine learning at Harvard University, with multiple manuscripts currently under review at peer-reviewed venues.
+The tutorial content draws directly on this research experience as well as Seo's applied work designing and deploying recommendation and ranking systems in production at LegalZoom.
+The team is developing a comparative implementation study as part of this tutorial; the codebase and evaluation framework will be released alongside the tutorial materials.
 
 \section{Differences from Prior Tutorials}
 
@@ -198,7 +206,7 @@ Compared with \textit{A Tutorial on Feature Interpretation in Recommender System
 
 \bibliographystyle{ACM-Reference-Format}
 
-\begin{thebibliography}{7}
+\begin{thebibliography}{11}
 
 \bibitem{harper2015movielens}
 F.~Maxwell Harper and Joseph~A. Konstan. 2015.
@@ -229,6 +237,26 @@ Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian~Q. Weinberger, and Yoav Artzi. 20
 Syed~Ali Shehmir and Rasha Kashef. 2025.
 \newblock LLM4Rec: A Comprehensive Survey on the Integration of Large Language Models in Recommender Systems---Approaches, Applications and Challenges.
 \newblock {\em Information Fusion\/} 117 (2025), 102842.
+
+\bibitem{ma2024xrec}
+Qiyao Ma, Xubin Ren, and Chao Huang. 2024.
+\newblock XRec: Large Language Models for Explainable Recommendation.
+\newblock In {\em Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
+
+\bibitem{wang2025kragrec}
+Shenghao Wang, Yizhou Dang, Guibin Zhang, Yuhao Wang, Qiang Liu, Shu Wu, and Liang Wang. 2025.
+\newblock Knowledge Graph Retrieval-Augmented Generation for LLM-based Recommendation.
+\newblock In {\em Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (ACL)}.
+
+\bibitem{ji2024genrec}
+Jianchao Ji, Zelong Li, Shuyuan Xu, Wenyue Hua, Yingqiang Ge, Juntao Tan, and Yongfeng Zhang. 2024.
+\newblock GenRec: Large Language Model for Generative Recommendation.
+\newblock In {\em Proceedings of the 46th European Conference on Information Retrieval (ECIR)}.
+
+\bibitem{amazon2023reviews}
+Jianmo Ni, Jiacheng Li, and Julian McAuley. 2019.
+\newblock Justifying Recommendations using Distantly-Labeled Reviews and Fine-Grained Aspects.
+\newblock In {\em Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
 
 \end{thebibliography}
 
