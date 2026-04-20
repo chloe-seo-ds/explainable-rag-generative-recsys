@@ -80,7 +80,7 @@ The tutorial is timely for RecSys because it connects several active subareas th
     \item Why text-rich recommendation matters now
     \item Where collaborative filtering stops being enough
     \item Why explanation quality matters in product settings
-    \item The three paradigms covered in this tutorial
+    \item The three paradigms covered in this tutorial: (1)~explainable recommenders grounded in collaborative evidence, (2)~retrieval-augmented recommenders, and (3)~LLM-native generative recommenders
     \item What ``controlled comparison'' means in practice
 \end{itemize}
 
@@ -113,7 +113,8 @@ Anchor system: K-RagRec~\cite{wang2025kragrec} --- knowledge-graph retrieval-aug
     \item LLM reranking versus LLM explanation generation
     \item Retrieval quality versus generation quality trade-offs
     \item Controlling hallucinations through grounding in retrieved evidence
-    \item Serving considerations: batching, caching, latency budgets, cost-aware inference
+    \item \textit{Advantages:} reduced hallucination through retrieved evidence, flexible integration of external knowledge, modular design allowing independent improvement of retrieval and generation components
+    \item \textit{Limitations:} retrieval errors propagate to generation, added latency from two-stage pipeline, serving considerations (batching, caching, latency budgets, cost-aware inference)
     \item Design decisions that most affect production viability
 \end{itemize}
 
@@ -126,7 +127,7 @@ Anchor system: GenRec~\cite{ji2024genrec} --- instruction-tuned LLM for direct n
     \item Instruction diversity during training: how paraphrased instruction templates improve robustness
     \item Prompt-based user modeling; few-shot and zero-shot recommendation patterns
     \item QLoRA fine-tuning for domain adaptation versus zero-shot API-based generation
-    \item \textit{Strengths:} flexibility, low engineering overhead at prototype time, strong natural-language interaction
+    \item \textit{Advantages:} flexibility, low engineering overhead at prototype time, strong natural-language interaction
     \item \textit{Limitations:} output instability, grounding problems, ranking/generation mismatch, high serving cost; generated titles require fuzzy matching against the item catalog for evaluation
 \end{itemize}
 
