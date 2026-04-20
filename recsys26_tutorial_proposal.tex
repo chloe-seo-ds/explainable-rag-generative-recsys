@@ -30,7 +30,7 @@
 
 \begin{abstract}
 Recent progress in transformer encoders, retrieval-augmented generation, and large language models has created multiple viable ways to build text-rich recommender systems.
-Yet the field still lacks a practitioner-oriented tutorial that compares these choices under a common framework.
+While recent RecSys tutorials have explored individual LLM-based paradigms---agentic architectures (2025), generative conversation (2025), and LLMs for recommendation (2023)---the field still lacks a practitioner-oriented tutorial that places these paradigms side by side under a common evaluation framework and asks: \emph{which approach should I actually use, and when?}
 This tutorial presents a structured, empirical, and implementation-aware comparison of three paradigms for text-driven recommendation:
 collaborative-evidence explainable recommenders, retrieval-augmented recommenders with LLM prompting or reranking, and LLM-native generative recommenders.
 
@@ -65,9 +65,11 @@ This tutorial instead offers a controlled comparative perspective, designed to h
 The tutorial is timely for RecSys because it connects several active subareas that the community is already engaging with---explainability, retrieval, multimodal/text-rich recommendation, and LLM-based recommendation---while keeping the emphasis on practical method choice and reproducible evaluation.
 
 \section{Instructors}
-\textbf{Yejin Seo} is a Principal Data Scientist at LegalZoom and a student at Harvard University.
-\textbf{Sarthak Baral} is a student at Harvard University.
-\textbf{Kaylee Vo} is a Graduate Researcher and student at Harvard University.
+\begin{itemize}
+    \item \textbf{Yejin Seo} --- Principal Data Scientist at LegalZoom; student at Harvard University.
+    \item \textbf{Sarthak Baral} --- Student at Harvard University.
+    \item \textbf{Kaylee Vo} --- Graduate Researcher and student at Harvard University.
+\end{itemize}
 
 \section{Detailed Outline}
 
@@ -139,13 +141,14 @@ Anchor system: GenRec~\cite{ji2024genrec} --- instruction-tuned LLM for direct n
 \end{itemize}
 
 \subsubsection{Hands-On Walkthrough}
-All code is provided as Jupyter notebooks on Amazon Books, with shared data preparation and evaluation utilities.
+All code is provided as Jupyter notebooks on Amazon Books, with shared data preparation and evaluation utilities.\footnote{Repository: \url{https://github.com/chloe-seo-ds/explainable-rag-generative-recsys}}
+Training-heavy steps (BPR-MF, QLoRA fine-tuning) are precomputed and provided as checkpoints; pre-built FAISS indexes and cached LLM outputs are included so that attendees run inference-only notebooks without GPU hardware.
 \begin{itemize}
     \item Paradigm~1 notebook: BPR-MF training, ranking, and LLM explanation generation (XRec-inspired)
     \item Paradigm~2 notebook: sentence-transformer retrieval, FAISS indexing, and LLM reranking (K-RagRec-inspired)
     \item Paradigm~3 notebook: instruction-tuning data preparation, QLoRA fine-tuning, and title-matching evaluation (GenRec-inspired)
     \item Unified evaluation notebook: comparison tables for ranking, explanation quality, and system metrics across all three paradigms
-    \item Each notebook supports both local LLM inference (4-bit quantized LLaMA) and API-based alternatives
+    \item Each notebook supports both local LLM inference (4-bit quantized LLaMA) and API-based alternatives; attendees without GPU access use the precomputed outputs
     \item How to extend the starter code after the tutorial
 \end{itemize}
 
@@ -164,6 +167,16 @@ It will be most useful for recommender-systems researchers, PhD and advanced Mas
 \paragraph{Expected background.}
 Familiarity with standard recommender-system concepts; comfort with basic ranking metrics; basic machine-learning knowledge.
 Some exposure to transformers or embeddings is helpful but not required.
+
+\paragraph{Learning objectives.}
+By the end of this tutorial, attendees will be able to:
+\begin{enumerate}
+    \item Identify the architectural differences, data requirements, and serving trade-offs among explainable, retrieval-augmented, and generative recommendation paradigms.
+    \item Construct a fair experimental comparison across paradigms using shared candidate pools, common splits, and matched evaluation budgets.
+    \item Evaluate generated explanations using relevance, specificity, consistency, and hallucination-rate metrics, and recognize where current evaluation standards fall short.
+    \item Select an appropriate paradigm given a concrete product scenario (e.g., sparse data, cold start, strict latency budget, or explainability requirement).
+    \item Adapt the provided notebook templates to a new text-rich dataset and produce a reproducible comparison report.
+\end{enumerate}
 
 \section{Materials and Logistics}
 
@@ -204,9 +217,25 @@ Compared with \textit{Recent Advances in Generative Conversational Recommender S
 
 Compared with \textit{A Tutorial on Feature Interpretation in Recommender Systems} (RecSys~2024), this tutorial focuses on choosing among three modern architecture families and evaluating both recommendation outputs and generated explanations, rather than feature interpretation within existing pipelines.
 
+\vspace{0.5em}
+\noindent
+\begin{small}
+\begin{tabular}{p{3.2cm}cccc}
+\hline
+\textbf{Tutorial} & \textbf{Multi-paradigm} & \textbf{Shared eval.} & \textbf{Expl.\ quality} & \textbf{Decision guide} \\
+\hline
+LLMs for Rec (2023) & \texttimes & \texttimes & \texttimes & \texttimes \\
+Agentic LLM (2025) & \texttimes & \texttimes & \texttimes & partial \\
+Generative Conv.\ (2025) & \texttimes & \texttimes & partial & \texttimes \\
+Feature Interp.\ (2024) & \texttimes & \texttimes & partial & \texttimes \\
+\textbf{Ours} & \checkmark & \checkmark & \checkmark & \checkmark \\
+\hline
+\end{tabular}
+\end{small}
+
 \bibliographystyle{ACM-Reference-Format}
 
-\begin{thebibliography}{11}
+\begin{thebibliography}{13}
 
 \bibitem{harper2015movielens}
 F.~Maxwell Harper and Joseph~A. Konstan. 2015.
@@ -257,6 +286,16 @@ Jianchao Ji, Zelong Li, Shuyuan Xu, Wenyue Hua, Yingqiang Ge, Juntao Tan, and Yo
 Jianmo Ni, Jiacheng Li, and Julian McAuley. 2019.
 \newblock Justifying Recommendations using Distantly-Labeled Reviews and Fine-Grained Aspects.
 \newblock In {\em Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
+
+\bibitem{lin2024llmrec}
+Jianghao Lin, Xinyi Dai, Yunjia Xi, Weiwen Liu, Bo Chen, Hao Zhang, Yong Liu, Chuhan Wu, Xiangyang Li, Chenxu Zhu, Huifeng Guo, Ruiming Tang, Yichao Wang, and Weinan Zhang. 2024.
+\newblock How Can Recommender Systems Benefit from Large Language Models: A Survey.
+\newblock {\em ACM Transactions on Information Systems\/} 42, 4 (2024), Article~95.
+
+\bibitem{sun2024llmrectutorial}
+Wenqi Sun, Ruobing Xie, Junjie Zhang, Wayne~Xin Zhao, Leyu Lin, and Ji-Rong Wen. 2023.
+\newblock Large Language Models for Recommendation (Tutorial).
+\newblock In {\em Proceedings of the 17th ACM Conference on Recommender Systems (RecSys)}.
 
 \end{thebibliography}
 
