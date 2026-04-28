@@ -77,7 +77,7 @@ The tutorial is timely for RecSys because it connects several active subareas th
 
 \subsubsection{Framing the Problem Space}
 \begin{itemize}
-    \item Why text-rich recommendation matters now
+    \item Why text-rich recommendation matters
     \item Where collaborative filtering stops being enough
     \item Why explanation quality matters in product settings
     \item The three paradigms covered in this tutorial: (1)~explainable recommenders grounded in collaborative evidence, (2)~retrieval-augmented recommenders, and (3)~LLM-native generative recommenders
@@ -108,11 +108,11 @@ Anchor system: XRec~\cite{ma2024xrec} --- collaborative ranking with LLM-generat
 \subsubsection{Paradigm 2: Retrieval-Augmented Recommenders}
 Anchor system: K-RagRec~\cite{wang2025kragrec} --- knowledge-graph retrieval-augmented generation for LLM-based recommendation.
 \begin{itemize}
-    \item Dense retrieval for initial candidate generation (sentence-transformer embeddings, FAISS indexing)
+    \item Dense retrieval for initial candidate generation (sentence-transformer embeddings, FAISS indexing): items are encoded as dense vectors and candidates are found by nearest-neighbor search, as opposed to sparse retrieval like TF-IDF matching
     \item Prompt assembly and context injection: retrieved candidates are formatted as LLM input
     \item LLM reranking versus LLM explanation generation
     \item Retrieval quality versus generation quality trade-offs
-    \item Controlling hallucinations through grounding in retrieved evidence
+    \item Controlling hallucinations by restricting the LLM to reason over items actually retrieved from the catalog
     \item \textit{Advantages:} reduced hallucination through retrieved evidence, flexible integration of external knowledge, modular design allowing independent improvement of retrieval and generation components
     \item \textit{Limitations:} retrieval errors propagate to generation, added latency from two-stage pipeline, serving considerations (batching, caching, latency budgets, cost-aware inference)
     \item Design decisions that most affect production viability
@@ -131,13 +131,13 @@ Anchor system: GenRec~\cite{ji2024genrec} --- instruction-tuned LLM for direct n
     \item \textit{Limitations:} output instability, grounding problems, ranking/generation mismatch, high serving cost; generated titles require fuzzy matching against the item catalog for evaluation
 \end{itemize}
 
-\subsubsection{Unified Experimental Framework}
+\subsubsection{Experimental Framework}
 \begin{itemize}
-    \item Shared candidate pools and fair comparisons across all three paradigms
+    \item All three paradigms rank from the same set of candidate items for each user, ensuring fair comparisons
     \item Benchmark dataset: Amazon Books~\cite{amazon2023reviews} (text-rich, with reviews and metadata), chosen because it is natively supported by all three anchor systems
     \item Ranking metrics: HR@10, NDCG@10, Recall@$K$ (note: in Paradigm~1 these apply only to the collaborative ranking layer; the downstream LLM explanation layer does not produce rankings and is evaluated separately with explanation metrics)
     \item Explanation metrics, informed by the evaluation dimensions surveyed in~\cite{zhang2020explainable} and operationalized with embedding-based text evaluation~\cite{zhang2020bertscore}: \emph{relevance} (does the explanation cite items or attributes the user actually interacted with?), \emph{specificity} (does it go beyond generic praise to reference concrete item features?), \emph{consistency} (does the same input produce semantically stable explanations across runs?), and \emph{hallucination rate} (does the explanation assert facts not supported by the input data?). No unified benchmark standard yet exists for explanation evaluation in recommendation; the tutorial will discuss this gap and propose practical operationalizations for each metric
-    \item System metrics: latency, token cost, implementation complexity, reproducibility burden
+    \item System metrics: latency (ms per request), token cost (USD per 1K recommendations), implementation complexity (qualitative), reproducibility burden (qualitative)
     \item How to interpret contradictory metric outcomes
 \end{itemize}
 
@@ -156,6 +156,7 @@ Training-heavy steps (BPR-MF, QLoRA fine-tuning) are precomputed and provided as
 \subsubsection{Decision Framework and Open Challenges}
 \begin{itemize}
     \item Which approach to use under: sparse interactions, cold-start items, explanation-heavy product requirements, strict serving budgets, fast prototyping constraints
+    \item Production case study drawn from a recommender system in the legal services domain, illustrating how paradigm choice is shaped by data sparsity, explainability requirements, and serving budgets
     \item Bias, safety, and evaluation gaps
     \item Research opportunities in grounded explanation and benchmark design
     \item Closing Q\&A
@@ -172,7 +173,7 @@ Some exposure to transformers or embeddings is helpful but not required.
 \paragraph{Learning objectives.}
 By the end of this tutorial, attendees will be able to:
 \begin{enumerate}
-    \item Identify the architectural differences, data requirements, and serving trade-offs among explainable, retrieval-augmented, and generative recommendation paradigms.
+    \item Identify the architectural differences, data requirements, and cost of running each paradigm in production among explainable, retrieval-augmented, and generative recommendation paradigms.
     \item Construct a fair experimental comparison across paradigms using shared candidate pools, common splits, and matched evaluation budgets.
     \item Evaluate generated explanations using relevance, specificity, consistency, and hallucination-rate metrics, and recognize where current evaluation standards fall short.
     \item Select an appropriate paradigm given a concrete product scenario (e.g., sparse data, cold start, strict latency budget, or explainability requirement).
