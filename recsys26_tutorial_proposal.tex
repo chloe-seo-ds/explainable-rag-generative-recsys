@@ -49,7 +49,7 @@ Attendees will leave with conceptual clarity, implementation guidance, and a reu
 Half-day tutorial delivered over two conference tutorial blocks, for approximately 3 hours of instructional time plus the conference coffee break.
 
 \section{Motivation}
-Language models are rapidly changing the design space of recommender systems, especially in domains where item descriptions, reviews, metadata, and other textual signals are abundant.
+Language models are rapidly changing the design space of recommender systems, especially in domains where item descriptions, reviews, and other textual signals are abundant.
 However, the practical choice among model families remains unclear.
 Teams can now build:
 \begin{enumerate}
@@ -100,7 +100,7 @@ Anchor system: XRec~\cite{ma2024xrec} --- collaborative ranking with LLM-generat
     \item How collaborative signals and textual signals are combined
     \item Explanation construction from historical user--item evidence
     \item Template-based versus neural explanation generation
-    \item \textit{Advantages:} stronger grounding, easier justification, tighter connection to user history
+    \item \textit{Advantages:} Explanations are anchored in real data and can be traced back to specific past interactions
     \item \textit{Limitations:} weaker cold-start behavior, dependence on interaction density, narrower generalization outside known catalogs; the LLM explanation layer adds latency but does not modify the ranking
     \item Example evaluation on Amazon Books~\cite{amazon2023reviews} and failure analysis
 \end{itemize}
@@ -108,11 +108,11 @@ Anchor system: XRec~\cite{ma2024xrec} --- collaborative ranking with LLM-generat
 \subsubsection{Paradigm 2: Retrieval-Augmented Recommenders}
 Anchor system: K-RagRec~\cite{wang2025kragrec} --- knowledge-graph retrieval-augmented generation for LLM-based recommendation.
 \begin{itemize}
-    \item Dense retrieval for initial candidate generation (sentence-transformer embeddings, FAISS indexing)
+    \item Dense retrieval for initial candidate generation (sentence-transformer embeddings, FAISS indexing). Items are encoded as dense embeddings, and candidates are found by nearest-neighbor search in that vector space, as opposed to sparse retrieval like TF-IDF matching.
     \item Prompt assembly and context injection: retrieved candidates are formatted as LLM input
     \item LLM reranking versus LLM explanation generation
     \item Retrieval quality versus generation quality trade-offs
-    \item Controlling hallucinations through grounding in retrieved evidence
+    \item Controlling hallucinations by restricting the LLM to  reason over items that were actually retrieved in the catalog
     \item \textit{Advantages:} reduced hallucination through retrieved evidence, flexible integration of external knowledge, modular design allowing independent improvement of retrieval and generation components
     \item \textit{Limitations:} retrieval errors propagate to generation, added latency from two-stage pipeline, serving considerations (batching, caching, latency budgets, cost-aware inference)
     \item Design decisions that most affect production viability
@@ -133,7 +133,7 @@ Anchor system: GenRec~\cite{ji2024genrec} --- instruction-tuned LLM for direct n
 
 \subsubsection{Experimental Framework}
 \begin{itemize}
-    \item Shared candidate pools and fair comparisons across all three paradigms
+    \item All three paradigms rank from the same set of candidate items for each user, creating fair comparisons across all three paradigms
     \item Benchmark dataset: Amazon Books~\cite{amazon2023reviews} (text-rich, with reviews and metadata), chosen because it is natively supported by all three anchor systems
     \item Ranking metrics: HR@10, NDCG@10, Recall@$K$ (note: in Paradigm~1 these apply only to the collaborative ranking layer; the downstream LLM explanation layer does not produce rankings and is evaluated separately with explanation metrics)
     \item Explanation metrics, informed by the evaluation dimensions surveyed in~\cite{zhang2020explainable} and operationalized with embedding-based text evaluation~\cite{zhang2020bertscore}: \emph{relevance} (does the explanation cite items or attributes the user actually interacted with?), \emph{specificity} (does it go beyond generic praise to reference concrete item features?), \emph{consistency} (does the same input produce semantically stable explanations across runs?), and \emph{hallucination rate} (does the explanation assert facts not supported by the input data?). No unified benchmark standard yet exists for explanation evaluation in recommendation; the tutorial will discuss this gap and propose practical operationalizations for each metric
@@ -156,7 +156,7 @@ Training-heavy steps (BPR-MF, QLoRA fine-tuning) are precomputed and provided as
 \subsubsection{Decision Framework and Open Challenges}
 \begin{itemize}
     \item Which approach to use under: sparse interactions, cold-start items, explanation-heavy product requirements, strict serving budgets, fast prototyping constraints
-    \item Bias, safety, and evaluation gaps
+    \item Bias safety, and evaluation gaps
     \item Research opportunities in grounded explanation and benchmark design
     \item Closing Q\&A
 \end{itemize}
@@ -172,7 +172,7 @@ Some exposure to transformers or embeddings is helpful but not required.
 \paragraph{Learning objectives.}
 By the end of this tutorial, attendees will be able to:
 \begin{enumerate}
-    \item Identify the architectural differences, data requirements, and serving trade-offs among explainable, retrieval-augmented, and generative recommendation paradigms.
+    \item Identify the architectural differences, data requirements, and cost of running each paradigm in production, among explainable, retrieval-augmented, and generative recommendation paradigms.
     \item Construct a fair experimental comparison across paradigms using shared candidate pools, common splits, and matched evaluation budgets.
     \item Evaluate generated explanations using relevance, specificity, consistency, and hallucination-rate metrics, and recognize where current evaluation standards fall short.
     \item Select an appropriate paradigm given a concrete product scenario (e.g., sparse data, cold start, strict latency budget, or explainability requirement).
