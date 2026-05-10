@@ -1,6 +1,6 @@
 """
 Shared utilities for RecSys26 Tutorial:
-From Retrieval to Generation — Comparing Explainable, RAG, and LLM-Native Recommenders
+Choosing Between Explainable, Retrieval-Augmented, and LLM-Native Recommenders in Text-Rich Domains
 
 Anchor papers:
   - XRec (Ma et al., EMNLP 2024) — Explainable paradigm
@@ -12,6 +12,7 @@ import json
 import math
 import os
 import pickle
+import re
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -26,8 +27,10 @@ import pandas as pd
 ROOT_DIR = Path(__file__).resolve().parent
 DATA_DIR = ROOT_DIR / "data"
 RESULTS_DIR = ROOT_DIR / "results"
+CACHE_DIR = ROOT_DIR / "cache"
 DATA_DIR.mkdir(exist_ok=True)
 RESULTS_DIR.mkdir(exist_ok=True)
+CACHE_DIR.mkdir(exist_ok=True)
 
 
 # ──────────────────────────────────────────────
@@ -39,8 +42,9 @@ def load_amazon_books(
     max_users: int = 20_000,
     seed: int = 42,
 ) -> pd.DataFrame:
-    """Load and preprocess Amazon Books dataset (2018 5-core version).
+    """Load and preprocess Amazon Books dataset (2023 version, Hou et al.).
 
+    Downloads from McAuley-Lab/Amazon-Reviews-2023 on HuggingFace.
     Returns DataFrame with columns: user_id, item_id, rating, timestamp, title.
     """
     processed_path = DATA_DIR / "amazon_books_processed.parquet"
@@ -199,18 +203,16 @@ def evaluate_ranking(predictions: dict, ground_truth: dict, k_values: list = Non
 
     results = {}
     for k in k_values:
-        hits, ndcgs, recalls = [], [], []
+        hits, ndcgs = [], []
         for user_idx, true_item in ground_truth.items():
             if user_idx not in predictions:
                 continue
             pred_list = predictions[user_idx]
             hits.append(hit_at_k(pred_list, true_item, k))
             ndcgs.append(ndcg_at_k(pred_list, true_item, k))
-            recalls.append(recall_at_k(pred_list, true_item, k))
 
         results[f"HR@{k}"] = np.mean(hits) if hits else 0.0
         results[f"NDCG@{k}"] = np.mean(ndcgs) if ndcgs else 0.0
-        results[f"Recall@{k}"] = np.mean(recalls) if recalls else 0.0
 
     return results
 
@@ -267,6 +269,9 @@ def explanation_consistency(explanations: list) -> float:
     return np.mean(scores) if scores else 0.0
 
 
+MIN_TITLE_LENGTH = 4  # skip titles too short to match reliably
+
+
 def explanation_hallucination_rate(
     explanation: str, item_title: str, user_history_titles: list, all_titles: set
 ) -> float:
@@ -274,6 +279,7 @@ def explanation_hallucination_rate(
 
     Checks if the explanation mentions book titles that are neither the recommended item
     nor in the user's history. Returns fraction of mentioned titles that are hallucinated.
+    Uses word-boundary matching to avoid false positives from short titles.
     """
     if not explanation:
         return 0.0
@@ -283,12 +289,44 @@ def explanation_hallucination_rate(
     mentioned_count = 0
     hallucinated_count = 0
     for title in all_titles:
-        if title.lower() in explanation_lower:
+        title_lower = title.lower()
+        if len(title_lower) < MIN_TITLE_LENGTH:
+            continue
+        if re.search(r'\b' + re.escape(title_lower) + r'\b', explanation_lower):
             mentioned_count += 1
-            if title.lower() not in valid_titles:
+            if title_lower not in valid_titles:
                 hallucinated_count += 1
 
     return hallucinated_count / mentioned_count if mentioned_count > 0 else 0.0
+
+
+def _cosine_sim(a, b):
+    """Cosine similarity between two vectors."""
+    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-8))
+
+
+def explanation_relevance_embedding(
+    explanation: str, user_history_titles: list, item_title: str, encoder
+) -> float:
+    """Embedding-based relevance: cosine similarity between the explanation
+    and the user's reading history (concatenated titles)."""
+    if not explanation or not user_history_titles:
+        return 0.0
+    history_text = "; ".join(user_history_titles)
+    embs = encoder.encode([explanation, history_text])
+    return _cosine_sim(embs[0], embs[1])
+
+
+def explanation_consistency_embedding(texts: list, encoder) -> float:
+    """Embedding-based consistency: mean pairwise cosine similarity."""
+    if len(texts) < 2:
+        return 1.0
+    embs = encoder.encode(texts)
+    scores = []
+    for i in range(len(embs)):
+        for j in range(i + 1, len(embs)):
+            scores.append(_cosine_sim(embs[i], embs[j]))
+    return np.mean(scores) if scores else 0.0
 
 
 def evaluate_explanations(
@@ -296,6 +334,8 @@ def evaluate_explanations(
     user_histories: dict,
     item_titles: dict,
     all_titles: Optional[set] = None,
+    consistency_texts: Optional[dict] = None,
+    encoder=None,
 ) -> dict:
     """Evaluate explanation quality across all users.
 
@@ -304,6 +344,10 @@ def evaluate_explanations(
         user_histories: {user_idx: [item_idx_list]}
         item_titles: {item_idx: title_str}
         all_titles: set of all item titles (for hallucination check)
+        consistency_texts: {user_idx: [text1, text2, ...]} — multiple explanations
+            for the same input, used to measure cross-run stability
+        encoder: a SentenceTransformer instance for embedding-based metrics;
+            if None, only lexical metrics are computed
 
     Returns:
         dict of metric_name -> value
@@ -312,6 +356,7 @@ def evaluate_explanations(
         all_titles = set(item_titles.values())
 
     relevances, specificities, hallucinations = [], [], []
+    emb_relevances = []
     for user_idx, expl_data in explanations.items():
         item_idx = expl_data["item_idx"]
         text = expl_data["text"]
@@ -324,12 +369,41 @@ def evaluate_explanations(
         hallucinations.append(
             explanation_hallucination_rate(text, item_title, history_titles, all_titles)
         )
+        if encoder is not None:
+            emb_relevances.append(
+                explanation_relevance_embedding(text, history_titles, item_title, encoder)
+            )
 
-    return {
+    # Lexical consistency
+    consistency_val = 0.0
+    consistency_emb_val = 0.0
+    if consistency_texts:
+        cons_scores = [
+            explanation_consistency(texts)
+            for texts in consistency_texts.values()
+            if len(texts) >= 2
+        ]
+        consistency_val = np.mean(cons_scores) if cons_scores else 0.0
+
+        if encoder is not None:
+            emb_cons = [
+                explanation_consistency_embedding(texts, encoder)
+                for texts in consistency_texts.values()
+                if len(texts) >= 2
+            ]
+            consistency_emb_val = np.mean(emb_cons) if emb_cons else 0.0
+
+    results = {
         "relevance": np.mean(relevances) if relevances else 0.0,
         "specificity": np.mean(specificities) if specificities else 0.0,
+        "consistency": consistency_val,
         "hallucination_rate": np.mean(hallucinations) if hallucinations else 0.0,
     }
+    if encoder is not None:
+        results["relevance_embedding"] = np.mean(emb_relevances) if emb_relevances else 0.0
+        results["consistency_embedding"] = consistency_emb_val
+
+    return results
 
 
 # ──────────────────────────────────────────────
@@ -389,3 +463,25 @@ def load_predictions(paradigm_name: str) -> dict:
     path = RESULTS_DIR / f"{paradigm_name}_predictions.pkl"
     with open(path, "rb") as f:
         return pickle.load(f)
+
+
+# ──────────────────────────────────────────────
+# Cache I/O (pre-computed LLM outputs, embeddings)
+# ──────────────────────────────────────────────
+def save_cache(name: str, data):
+    """Save pre-computed outputs to cache directory."""
+    path = CACHE_DIR / f"{name}.pkl"
+    with open(path, "wb") as f:
+        pickle.dump(data, f)
+    print(f"Cached: {path}")
+
+
+def load_cache(name: str):
+    """Load pre-computed outputs from cache. Returns None if not found."""
+    path = CACHE_DIR / f"{name}.pkl"
+    if path.exists():
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        print(f"Loaded cache: {path}")
+        return data
+    return None
