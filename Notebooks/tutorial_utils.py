@@ -69,13 +69,17 @@ def load_amazon_books(
     )
 
     print("Processing reviews...")
-    df_reviews = reviews.to_pandas()[["user_id", "parent_asin", "rating", "timestamp"]]
-    df_reviews.columns = ["user_id", "item_id", "rating", "timestamp"]
+    review_cols_keep = ["user_id", "parent_asin", "rating", "timestamp"]
+    reviews = reviews.remove_columns([c for c in reviews.column_names if c not in review_cols_keep])
+    df_reviews = reviews.to_pandas()
+    df_reviews = df_reviews.rename(columns={"parent_asin": "item_id"})
     df_reviews = df_reviews.dropna(subset=["user_id", "item_id", "rating", "timestamp"])
 
     print("Processing metadata...")
-    df_meta = meta.to_pandas()[["parent_asin", "title"]].drop_duplicates(subset=["parent_asin"])
-    df_meta.columns = ["item_id", "title"]
+    meta_cols_keep = ["parent_asin", "title"]
+    meta = meta.remove_columns([c for c in meta.column_names if c not in meta_cols_keep])
+    df_meta = meta.to_pandas().drop_duplicates(subset=["parent_asin"])
+    df_meta = df_meta.rename(columns={"parent_asin": "item_id"})
     df_meta = df_meta.dropna(subset=["title"])
     df_meta = df_meta[df_meta["title"].str.len() > 0]
 
