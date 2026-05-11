@@ -1,0 +1,43 @@
+{
+  "paradigm": "explainable",
+  "model": "BPR-MF + LLM explanation",
+  "anchor_paper": "XRec (Ma et al., EMNLP 2024)",
+  "ranking": {
+    "HR@5": 0.015779363336992317,
+    "NDCG@5": 0.01013003557818524,
+    "HR@10": 0.021953896816684963,
+    "NDCG@10": 0.012124699430515997,
+    "HR@20": 0.0325192096597146,
+    "NDCG@20": 0.014768916033178994
+  },
+  "ranking_pooled": {
+    "HR@5": 0.16794731064763996,
+    "NDCG@5": 0.11971340151699086,
+    "HR@10": 0.24396267837541163,
+    "NDCG@10": 0.14403110943055786,
+    "HR@20": 0.3670417124039517,
+    "NDCG@20": 0.17494931517767554
+  },
+  "explanation": {
+    "relevance": 0.2642370129870129,
+    "specificity": 0.71,
+    "consistency": 0.3581181867663302,
+    "hallucination_rate": 0.3208333333333333,
+    "relevance_embedding": 0.5543522599339485,
+    "consistency_embedding": 0.8607219854990641
+  },
+  "system": {
+    "ranking_latency": {
+      "mean_latency_ms": 1.4479694198960138,
+      "p50_latency_ms": 1.0008811950683594,
+      "p95_latency_ms": 3.000020980834961,
+      "total_seconds": 10.552801132202148
+    },
+    "explanation_latency": {
+      "mean_latency_ms": 20449.49898004532,
+      "p50_latency_ms": 22816.053867340088,
+      "p95_latency_ms": 45427.79450416565,
+      "total_seconds": 2044.9498980045319
+    }
+  }
+}
