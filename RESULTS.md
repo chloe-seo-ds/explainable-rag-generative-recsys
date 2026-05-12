@@ -123,7 +123,49 @@
 ## Paradigm 3 — Generative (LLM-Native, GenRec-style)
 
 **Anchor paper:** GenRec (Ji et al., ECIR 2024)  
-**Status:** Pending
+**Run date:** 2026-05-12  
+**Status:** Complete
+
+### Ranking — Full Catalog (200 users)
+
+| Metric | Score |
+|---|---|
+| HR@5 | 0.0050 |
+| NDCG@5 | 0.0032 |
+| HR@10 | 0.0050 |
+| NDCG@10 | 0.0032 |
+| HR@20 | 0.0050 |
+| NDCG@20 | 0.0032 |
+
+### Ranking — Shared Pool (100 candidates/user)
+
+| Metric | Score |
+|---|---|
+| HR@5 | 0.0150 |
+| NDCG@5 | 0.0150 |
+| HR@10 | 0.0150 |
+| NDCG@10 | 0.0150 |
+| HR@20 | 0.0150 |
+| NDCG@20 | 0.0150 |
+
+### Explanation Quality
+
+N/A — pure generation paradigm; no explanation metrics computed.
+
+### System Metrics
+
+| Metric | Value |
+|---|---|
+| Latency (mean) | 24,487 ms/example (~24s) |
+| Latency (p50) | 15,827 ms |
+| Latency (p95) | 65,941 ms |
+| Total pipeline time (200 users) | ~82 min |
+
+**Notes:**
+- Low HR reflects the difficulty of zero-shot title generation: Qwen must generate an exact (or near-exact) title from a 50K-item catalog with no catalog access
+- Shared-pool HR@10 of 1.5% vs NB01 (24.4%) and NB02 (28.3%) is the expected story — zero-shot generative cannot match trained recommenders on catalog accuracy without fine-tuning
+- Flat HR@5 = HR@10 = HR@20 same artifact as NB02: generated list produces fewer matched items than K
+- This result motivates the tutorial's core argument: fine-tuning (QLoRA) or retrieval augmentation is needed for competitive generative recommendation
 
 ---
 
@@ -133,4 +175,4 @@
 |---|---|---|---|---|---|---|
 | Explainable | BPR-MF + Qwen2.5-3B | 0.2440 | 0.1440 | 0.554 | 0.321 | 1.4 ms |
 | RAG | FAISS + Qwen2.5-3B rerank | 0.2829 | 0.1820 | 0.602 | 0.369 | 30,122 ms |
-| Generative | Qwen2.5-3B zero-shot | — | — | N/A | N/A | — |
+| Generative | Qwen2.5-3B zero-shot | 0.0150 | 0.0150 | N/A | N/A | 24,487 ms |
