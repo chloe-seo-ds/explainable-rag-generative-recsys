@@ -67,7 +67,56 @@
 ## Paradigm 2 — RAG (FAISS Retrieval + LLM Reranking)
 
 **Anchor paper:** K-RagRec (Wang et al., ACL 2025)  
-**Status:** Pending
+**Run date:** 2026-05-12  
+**Status:** Complete
+
+### Ranking — Full Catalog (200 users)
+
+| Metric | Score |
+|---|---|
+| HR@5 | 0.0500 |
+| NDCG@5 | 0.0293 |
+| HR@10 | 0.0500 |
+| NDCG@10 | 0.0293 |
+| HR@20 | 0.0500 |
+| NDCG@20 | 0.0293 |
+
+### Ranking — Shared Pool (100 candidates/user)
+
+| Metric | Score |
+|---|---|
+| HR@5 | 0.2091 |
+| NDCG@5 | 0.1584 |
+| HR@10 | 0.2829 |
+| NDCG@10 | 0.1820 |
+| HR@20 | 0.4108 |
+| NDCG@20 | 0.2140 |
+
+### Explanation Quality (100 users, template-based consistency)
+
+| Metric | Score | Notes |
+|---|---|---|
+| Relevance (lexical) | 0.222 | Lexical overlap between explanation and history |
+| Relevance (embedding) | 0.602 | Semantic similarity via sentence-transformers |
+| Specificity | 0.631 | Fraction of explanations referencing specific titles |
+| Consistency | 1.000 | Artifact — deterministic template used for consistency runs |
+| Consistency (embedding) | 1.000 | Same artifact |
+| Hallucination rate | 0.369 | Fraction mentioning titles not in user history |
+
+### System Metrics
+
+| Metric | Value |
+|---|---|
+| Latency (mean) | 30,122 ms/user (~30s) |
+| Latency (p50) | 28,682 ms |
+| Latency (p95) | 61,708 ms |
+| Total pipeline time (200 users) | ~100 min |
+
+**Notes:**
+- Full-catalog HR@K is flat (same at K=5, 10, 20) because the LLM reranker outputs a truncated JSON list (~5 items); no items are added beyond rank 5 in many cases
+- Shared-pool HR@10 of 28.3% outperforms NB01 (24.4%), showing LLM reranking adds value over BPR-MF
+- Consistency = 1.0 is an artifact: the consistency runs use the deterministic `generate_rag_explanation` template, not the LLM; not a meaningful signal
+- Hallucination rate of 37% is slightly higher than NB01 (32%), likely because the retrieval-based explanations reference the top retrieved title regardless of user history overlap
 
 ---
 
@@ -83,5 +132,5 @@
 | Paradigm | Model | HR@10 (pool) | NDCG@10 (pool) | Expl. Relevance | Hallucination | Ranking Latency |
 |---|---|---|---|---|---|---|
 | Explainable | BPR-MF + Qwen2.5-3B | 0.2440 | 0.1440 | 0.554 | 0.321 | 1.4 ms |
-| RAG | FAISS + Qwen2.5-3B rerank | — | — | — | — | — |
+| RAG | FAISS + Qwen2.5-3B rerank | 0.2829 | 0.1820 | 0.602 | 0.369 | 30,122 ms |
 | Generative | Qwen2.5-3B zero-shot | — | — | N/A | N/A | — |

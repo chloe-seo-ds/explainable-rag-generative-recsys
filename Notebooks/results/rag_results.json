@@ -1,0 +1,37 @@
+{
+  "paradigm": "rag",
+  "model": "Sentence-Transformers retrieval + LLM rerank",
+  "anchor_paper": "K-RagRec (Wang et al., ACL 2025)",
+  "ranking": {
+    "HR@5": 0.05,
+    "NDCG@5": 0.02929515470199882,
+    "HR@10": 0.05,
+    "NDCG@10": 0.02929515470199882,
+    "HR@20": 0.05,
+    "NDCG@20": 0.02929515470199882
+  },
+  "ranking_pooled": {
+    "HR@5": 0.20911086717892427,
+    "NDCG@5": 0.15841693729352396,
+    "HR@10": 0.2829308452250274,
+    "NDCG@10": 0.181987570723291,
+    "HR@20": 0.4108122941822173,
+    "NDCG@20": 0.21400641152135333
+  },
+  "explanation": {
+    "relevance": 0.22233369408369405,
+    "specificity": 0.6306,
+    "consistency": 1.0,
+    "hallucination_rate": 0.36916666666666664,
+    "relevance_embedding": 0.6024914427101612,
+    "consistency_embedding": 1.0000000417232513
+  },
+  "system": {
+    "latency": {
+      "mean_latency_ms": 30121.618226766586,
+      "p50_latency_ms": 28682.461380958557,
+      "p95_latency_ms": 61707.748782634706,
+      "total_seconds": 6024.323645353317
+    }
+  }
+}
