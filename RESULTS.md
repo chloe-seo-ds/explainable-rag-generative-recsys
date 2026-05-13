@@ -173,7 +173,7 @@
 | Metric | Zero-shot | Fine-tuned | Improvement |
 |---|---|---|---|
 | HR@10 (full catalog) | 0.0050 | 0.0266 | 5.3x |
-| HR@10 (shared pool) | 0.0150 | 0.0445 | 3.0x |
+| HR@10 (shared pool, title gen) | 0.0150 | 0.0445 | 3.0x |
 | Catalog match rate | 71.5% | 93.4% | +21.9pp |
 
 **Notes:**
@@ -181,8 +181,55 @@
 - Match rate jumped from 71.5% to 93.4% — the model learned the catalog vocabulary
 - HR is flat across K=1/5/10/20 because the model generates a single title (GenRec design); it either hits or misses
 - Even fine-tuned, HR@10 of 2.7% (full catalog) is substantially below BPR-MF (2.2%) and RAG (5.0%) on full catalog — but this is expected for a 3B model on a 6K-item catalog; larger models and more training data would improve this
-- Shared-pool HR@10 of 4.5% is below BPR-MF (24.4%) and RAG (28.3%) — the generative approach generates one title per user while the other paradigms score all 100 pool items, making the comparison structurally different
+- Shared-pool HR@10 of 4.5% under title generation is below BPR-MF (24.4%) and RAG (28.3%) — but this is largely a measurement artifact, as Section 3c shows
 - Latency difference vs zero-shot (1.3s vs 24.5s) is partly due to max_new_tokens (30 vs 200) and hardware (A100 vs RTX 5050), not purely the paradigm
+
+### 3c. QLoRA Fine-Tuned + Log-Likelihood Scoring (Fair Comparison)
+
+**Notebook:** `03_2_genrec_likelihood_eval.ipynb`
+**Run date:** 2026-05-13
+**Model:** Qwen2.5-3B-Instruct + QLoRA adapter from §3b, 4-bit on L4
+**Method:** For each user, score all 100 shared-pool titles by mean per-token log-probability of the title given the user's history; rank by score
+**Users evaluated:** 2,820 (subset of 7,288; partial run stopped due to compute budget)
+
+**Ranking — Shared Pool (100 candidates/user)**
+
+| Metric | Score |
+|---|---|
+| HR@1 | 0.0745 |
+| NDCG@1 | 0.0745 |
+| HR@5 | 0.1706 |
+| NDCG@5 | 0.1221 |
+| HR@10 | **0.2667** |
+| NDCG@10 | 0.1530 |
+| HR@20 | 0.4085 |
+| NDCG@20 | 0.1885 |
+
+**System Metrics**
+
+| Metric | Value |
+|---|---|
+| Latency (mean) | 15,070 ms/user |
+| Hardware | NVIDIA L4 (Colab) |
+| Forward passes/user | 100 |
+
+**Title generation → log-likelihood improvement (same model, same data, same pool):**
+
+| Metric | Title generation | Log-likelihood | Improvement |
+|---|---|---|---|
+| HR@1 | 0.0445 | 0.0745 | 1.7x |
+| HR@5 | 0.0445 | 0.1706 | 3.8x |
+| HR@10 | 0.0445 | 0.2667 | **6.0x** |
+| HR@20 | 0.0445 | 0.4085 | 9.2x |
+| NDCG@10 | 0.0445 | 0.1530 | 3.4x |
+
+**Notes:**
+- The 6× HR@10 jump comes entirely from changing the evaluation protocol — the fine-tuned model is unchanged
+- Under fair (score-all-candidates) evaluation, generative (0.2667) beats BPR-MF (0.2440) and approaches RAG (0.2829)
+- Confirms that the generative paradigm's apparent shared-pool weakness was a measurement artifact of single-title generation, not a model capability gap
+- Latency cost: ~12× slower per user than title generation (15.1 s vs 1.3 s) because of 100 forward passes per user
+- 95% binomial CI half-width for HR@10 at N=2,820 ≈ ±1.6 percentage points
+- N=2,820 is the first 2,820 user_idx values; user_idx assignment is alphabetical-by-user_id_hash after random 20K subsample, so effectively (but not strictly) random
 
 ---
 
@@ -190,12 +237,13 @@
 
 ### Ranking Quality (Shared Pool — controlled comparison)
 
-| Paradigm | Model | HR@10 | NDCG@10 |
-|---|---|---|---|
-| **RAG** | FAISS + Qwen2.5-3B rerank | **0.2829** | **0.1820** |
-| **Explainable** | BPR-MF + Qwen2.5-3B | 0.2440 | 0.1440 |
-| **Generative (fine-tuned)** | Qwen2.5-3B QLoRA | 0.0445 | 0.0445 |
-| **Generative (zero-shot)** | Qwen2.5-3B | 0.0150 | 0.0150 |
+| Paradigm | Model | Eval Method | N | HR@10 | NDCG@10 |
+|---|---|---|---|---|---|
+| **RAG** | FAISS + Qwen2.5-3B rerank | reranking | 200 | **0.2829** | **0.1820** |
+| **Generative (fine-tuned)** | Qwen2.5-3B QLoRA | log-likelihood | 2,820 | 0.2667 | 0.1530 |
+| **Explainable** | BPR-MF | dot-product | 7,288 | 0.2440 | 0.1440 |
+| **Generative (fine-tuned)** | Qwen2.5-3B QLoRA | title generation | 7,288 | 0.0445 | 0.0445 |
+| **Generative (zero-shot)** | Qwen2.5-3B | title generation | 200 | 0.0150 | 0.0150 |
 
 ### Explanation Quality
 
@@ -211,7 +259,8 @@
 |---|---|---|---|
 | **Explainable** | **1.4 ms** | 20,449 ms/expl | RTX 5050 |
 | **RAG** | — | 30,122 ms/user | RTX 5050 |
-| **Generative (fine-tuned)** | — | 1,257 ms/user | A100 |
+| **Generative (fine-tuned, title gen)** | — | 1,257 ms/user | A100 |
+| **Generative (fine-tuned, log-likelihood)** | — | 15,070 ms/user | L4 |
 | **Generative (zero-shot)** | — | 24,487 ms/user | RTX 5050 |
 
 ---
@@ -224,8 +273,8 @@
 
 3. **Fine-tuning matters for generative recommendation.** QLoRA improved HR@10 by 5.3x over zero-shot and catalog match rate from 71.5% to 93.4%. Without fine-tuning, the LLM has no knowledge of the item catalog.
 
-4. **Generative remains weakest on ranking** even after fine-tuning (HR@10 4.5% vs 28.3% for RAG). This is partly structural — GenRec generates a single title while the other paradigms score all candidates. It is also a function of model size (3B) and the inherent difficulty of generating exact titles from a large catalog.
+4. **Evaluation protocol matters more than the model for the generative paradigm.** Switching from title-generation to log-likelihood scoring (Section 3c) lifts HR@10 by 6× (0.0445 → 0.2667) on the same fine-tuned model and same 100-candidate pool. Under this fair evaluation, generative beats BPR-MF (0.2440) and approaches RAG (0.2829). The shared-pool ranking is **RAG > Generative (log-likelihood) > BPR-MF**, not the wide three-way gap suggested by title generation alone.
 
 5. **Hallucination is a real concern** across all LLM-using paradigms — 32-37% of explanations reference titles not in the user's history. This motivates the tutorial's emphasis on grounded explanation evaluation.
 
-6. **Latency comparisons are not apples-to-apples** across paradigms — different hardware (RTX 5050 vs A100), different generation settings (max_new_tokens, sampling vs greedy), and different pipeline structures (score-all vs generate-one). The ranking latency for BPR-MF (1.4 ms, no LLM) is the only paradigm-intrinsic measurement.
+6. **Latency comparisons are not apples-to-apples** across paradigms — different hardware (RTX 5050 vs A100 vs L4), different generation settings (max_new_tokens, sampling vs greedy), and different pipeline structures (score-all vs generate-one). The ranking latency for BPR-MF (1.4 ms, no LLM) is the only paradigm-intrinsic measurement. Log-likelihood scoring costs ~12× more latency than title generation (15.1 s vs 1.3 s per user) — this is the price of fair-comparison ranking.
